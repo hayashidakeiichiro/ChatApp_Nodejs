@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type='text/css' href="/css/livecam.css">
+    <title>Document</title>
+</head>
+<body>
+    <div id="country"></div>
+    <div id="live">
+        <iframe :src='url' id='liveframe'width="280"  height="156"  title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        <button id="btn" v-on:click="click">llll</button>
+    </div>
+    <button id="back">back</button>
+    <div id="chat">
+        <form id="form" action="">
+            <input id="input"  autocomplete="off" /><button id="send">send</button>
+        </form>
+        <ul id="messages"></ul>
+
+    </div>
+    <!-- <script src="/js/live.js"></script>
+    <script src="/js/vue_content.js"></script> -->
+<script>
+    let socket= io();
+    let country='';
+    if(sessionStorage.getItem("country")){
+        country=sessionStorage.getItem("country");
+    }else{
+        location.href("world.ejs");
+    }
+    const cnt_dev = document.getElementById("country");
+    const btn =document.getElementById('back');
+    const form =document.getElementById('form');
+    const input =document.getElementById('input');
+    const messages =document.getElementById('messages');
+    let camlist=[];
+    cnt_dev.innerText=country
+    // カメラリストの取得
+    socket.emit('req_camlist',country);
+    socket.on('res_camlist',(list)=>{
+        camlist=list;
+    })
+    // chat履歴の取得
+    // socket.emit('chat_hist',country);
+    socket.on('chat_hist',(hist)=>{
+        let chat_hist=hist.split(' , ');
+        for(i=0; i<chat_hist.length-1;i++){
+            if (i<100){
+                const item=document.createElement('li');
+                item.textContent=chat_hist[i];
+                messages.prepend(item);
+            }else{
+                break;
+            }
+        };
+    });
+    form.addEventListener("submit",function(e){
+        e.preventDefault();       
+        if (input.value){
+        socket.emit("chat message",input.value,country);
+        input.value='';
+        console.log(input.value);
+        }
+    });
+    socket.on("chat message",(message)=>{
+        let item = document.createElement('li');
+        item.innerText=message;
+        messages.prepend(item);
+    });
+    btn.onclick=function(){location.href="/world.ejs";}
+    
+    let vm=new Vue({
+        el:'#live',
+        data(){
+            return{
+                url:'',
+                p:0
+            }
+        },
+        methods:{
+            click: function(e){
+                //遷移先がhttpsのためエラーが出る
+                if (camlist.length>0){
+                    this.p+=1
+                    const embed_url="https://www.youtube.com/embed/"+camlist[this.p%camlist.length].split('/').slice(-1)[0]+"?autoplay=1";
+                    this.url=embed_url;
+                }
+            }
+        }
+    });
+
+    
+</script>
+</body>
+</html>

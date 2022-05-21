@@ -1,0 +1,8 @@
+#regions_div{
+    width: 800px;
+    margin: 0 auto;
+}
+#container{
+    width: 100%;
+    overflow: scroll;
+}
